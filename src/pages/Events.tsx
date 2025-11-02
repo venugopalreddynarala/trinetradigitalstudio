@@ -1,0 +1,189 @@
+import { useState } from "react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, MapPin, ExternalLink } from "lucide-react";
+import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+const Events = () => {
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+
+  const { data: events = [], isLoading } = useQuery({
+    queryKey: ["events"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .order("event_date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const upcomingEvents = events.filter((e) => e.status === "upcoming");
+  const pastEvents = events.filter((e) => e.status === "past");
+
+  const EventCard = ({ event }: { event: any }) => (
+    <Card 
+      className="overflow-hidden group cursor-pointer shadow-elegant hover:shadow-hover transition-smooth"
+      onClick={() => setSelectedEvent(event)}
+    >
+      {event.thumbnail_url && (
+        <div className="relative h-48 overflow-hidden">
+          <img
+            src={event.thumbnail_url}
+            alt={event.title}
+            className="w-full h-full object-cover group-hover:scale-110 transition-smooth"
+          />
+          <Badge className="absolute top-4 right-4">
+            {event.status}
+          </Badge>
+        </div>
+      )}
+      <CardHeader>
+        <CardTitle className="group-hover:text-accent transition-smooth">
+          {event.title}
+        </CardTitle>
+        <CardDescription className="line-clamp-2">
+          {event.summary}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center text-muted-foreground">
+            <Calendar className="h-4 w-4 mr-2 text-accent" />
+            {format(new Date(event.event_date), "MMMM d, yyyy")}
+          </div>
+          {event.event_time && (
+            <div className="flex items-center text-muted-foreground">
+              <Clock className="h-4 w-4 mr-2 text-accent" />
+              {event.event_time}
+            </div>
+          )}
+          {event.location && (
+            <div className="flex items-center text-muted-foreground">
+              <MapPin className="h-4 w-4 mr-2 text-accent" />
+              {event.location}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+
+      <main className="pt-24 pb-20">
+        <div className="container mx-auto px-4">
+          <h1 className="text-5xl font-serif font-bold mb-4 text-center">
+            Our <span className="text-accent">Events</span>
+          </h1>
+          <p className="text-lg text-muted-foreground mb-12 text-center max-w-2xl mx-auto">
+            Join us for upcoming events or relive past moments
+          </p>
+
+          {isLoading ? (
+            <div className="text-center py-20">
+              <p className="text-muted-foreground">Loading events...</p>
+            </div>
+          ) : (
+            <>
+              {/* Upcoming Events */}
+              {upcomingEvents.length > 0 && (
+                <section className="mb-16">
+                  <h2 className="text-3xl font-serif font-bold mb-8">Upcoming Events</h2>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {upcomingEvents.map((event) => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Past Events */}
+              {pastEvents.length > 0 && (
+                <section>
+                  <h2 className="text-3xl font-serif font-bold mb-8">Past Events</h2>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {pastEvents.map((event) => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {events.length === 0 && (
+                <div className="text-center py-20">
+                  <p className="text-muted-foreground">No events scheduled yet.</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </main>
+
+      {/* Event Detail Modal */}
+      <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-serif">{selectedEvent?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedEvent && (
+            <div className="space-y-6">
+              {selectedEvent.thumbnail_url && (
+                <img
+                  src={selectedEvent.thumbnail_url}
+                  alt={selectedEvent.title}
+                  className="w-full h-64 object-cover rounded-lg"
+                />
+              )}
+              <div className="space-y-3">
+                <div className="flex items-center text-muted-foreground">
+                  <Calendar className="h-5 w-5 mr-3 text-accent" />
+                  {format(new Date(selectedEvent.event_date), "MMMM d, yyyy")}
+                </div>
+                {selectedEvent.event_time && (
+                  <div className="flex items-center text-muted-foreground">
+                    <Clock className="h-5 w-5 mr-3 text-accent" />
+                    {selectedEvent.event_time}
+                  </div>
+                )}
+                {selectedEvent.location && (
+                  <div className="flex items-center text-muted-foreground">
+                    <MapPin className="h-5 w-5 mr-3 text-accent" />
+                    {selectedEvent.location}
+                  </div>
+                )}
+              </div>
+              {selectedEvent.description_html && (
+                <div 
+                  className="prose max-w-none"
+                  dangerouslySetInnerHTML={{ __html: selectedEvent.description_html }}
+                />
+              )}
+              {selectedEvent.youtube_url && (
+                <Button asChild className="w-full">
+                  <a href={selectedEvent.youtube_url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Watch Live / Recording
+                  </a>
+                </Button>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Footer />
+    </div>
+  );
+};
+
+export default Events;
