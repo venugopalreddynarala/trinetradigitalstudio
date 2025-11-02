@@ -14,29 +14,59 @@ const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      if (data.session) {
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
+      if (isSignup) {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
         });
-        navigate("/admin/dashboard");
+
+        if (error) throw error;
+
+        if (data.user) {
+          // Create admin_users entry
+          const { error: adminError } = await supabase
+            .from('admin_users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              username: email.split('@')[0],
+              password_hash: '', // Not needed, auth handles this
+            });
+
+          if (adminError) throw adminError;
+
+          toast({
+            title: "Account created",
+            description: "Welcome! You can now access the admin dashboard.",
+          });
+          navigate("/admin/dashboard");
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        if (data.session) {
+          toast({
+            title: "Login successful",
+            description: "Welcome back!",
+          });
+          navigate("/admin/dashboard");
+        }
       }
     } catch (error: any) {
       toast({
-        title: "Login failed",
+        title: isSignup ? "Signup failed" : "Login failed",
         description: error.message || "Invalid credentials",
         variant: "destructive",
       });
@@ -52,13 +82,18 @@ const AdminLogin = () => {
           <div className="flex justify-center mb-4">
             <Camera className="h-12 w-12 text-accent" />
           </div>
-          <CardTitle className="text-3xl font-serif">Admin Login</CardTitle>
+          <CardTitle className="text-3xl font-serif">
+            {isSignup ? "Create Admin Account" : "Admin Login"}
+          </CardTitle>
           <CardDescription>
-            Enter your credentials to access the admin dashboard
+            {isSignup 
+              ? "Create your admin account to access the dashboard"
+              : "Enter your credentials to access the admin dashboard"
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
               <Input
@@ -82,8 +117,24 @@ const AdminLogin = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"}
+              {isLoading 
+                ? (isSignup ? "Creating account..." : "Logging in...") 
+                : (isSignup ? "Create Account" : "Login")
+              }
             </Button>
+            <div className="text-center mt-4">
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => setIsSignup(!isSignup)}
+                disabled={isLoading}
+              >
+                {isSignup 
+                  ? "Already have an account? Login" 
+                  : "Need an account? Sign up"
+                }
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
