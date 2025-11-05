@@ -30,7 +30,21 @@ const AdminLogin = () => {
         if (error) throw error;
 
         if (data.user) {
-          // Profile is auto-created by trigger, just add admin role
+          // Create profile manually
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              username: email.split('@')[0],
+            });
+
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            // Continue even if profile creation fails
+          }
+
+          // Add admin role
           const { error: roleError } = await supabase
             .from('user_roles')
             .insert({
