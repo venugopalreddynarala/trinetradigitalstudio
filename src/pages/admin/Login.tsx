@@ -30,17 +30,15 @@ const AdminLogin = () => {
         if (error) throw error;
 
         if (data.user) {
-          // Create profile with admin flag
-          const { error: profileError } = await supabase
-            .from('profiles')
+          // Profile is auto-created by trigger, just add admin role
+          const { error: roleError } = await supabase
+            .from('user_roles')
             .insert({
-              id: data.user.id,
-              email: data.user.email,
-              username: email.split('@')[0],
-              is_admin: true,
+              user_id: data.user.id,
+              role: 'admin',
             });
 
-          if (profileError) throw profileError;
+          if (roleError) throw roleError;
 
           toast({
             title: "Account created",
