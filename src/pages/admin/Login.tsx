@@ -11,10 +11,10 @@ import { supabase } from "@/integrations/supabase/client";
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("trinetra@gmail.com");
+  const [password, setPassword] = useState("trinetra");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignup, setIsSignup] = useState(false);
+  const [isSignup, setIsSignup] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,12 +25,15 @@ const AdminLogin = () => {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`
+          }
         });
 
         if (error) throw error;
 
         if (data.user) {
-          // Create profile manually
+          // Create profile
           const { error: profileError } = await supabase
             .from('profiles')
             .insert({
@@ -41,7 +44,6 @@ const AdminLogin = () => {
 
           if (profileError) {
             console.error('Profile creation error:', profileError);
-            // Continue even if profile creation fails
           }
 
           // Add admin role
@@ -52,13 +54,24 @@ const AdminLogin = () => {
               role: 'admin',
             });
 
-          if (roleError) throw roleError;
+          if (roleError) {
+            console.error('Role creation error:', roleError);
+          }
 
           toast({
-            title: "Account created",
-            description: "Welcome! You can now access the admin dashboard.",
+            title: "Admin account created",
+            description: "Logging you in now...",
           });
-          navigate("/admin/dashboard");
+          
+          // Auto login after signup
+          const { error: loginError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (!loginError) {
+            navigate("/admin/dashboard");
+          }
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
