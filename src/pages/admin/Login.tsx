@@ -30,17 +30,17 @@ const AdminLogin = () => {
         if (error) throw error;
 
         if (data.user) {
-          // Create admin_users entry
-          const { error: adminError } = await supabase
-            .from('admin_users')
+          // Create profile with admin flag
+          const { error: profileError } = await supabase
+            .from('profiles')
             .insert({
               id: data.user.id,
               email: data.user.email,
               username: email.split('@')[0],
-              password_hash: '', // Not needed, auth handles this
+              is_admin: true,
             });
 
-          if (adminError) throw adminError;
+          if (profileError) throw profileError;
 
           toast({
             title: "Account created",
