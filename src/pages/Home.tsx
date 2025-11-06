@@ -18,7 +18,7 @@ const Home = () => {
       const { data, error } = await supabase
         .from("site_settings")
         .select("*")
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },

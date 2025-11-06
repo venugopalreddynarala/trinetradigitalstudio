@@ -39,7 +39,7 @@ const AdminGallery = () => {
   }, [navigate]);
 
   const { data: galleryItems = [] } = useQuery({
-    queryKey: ["gallery-items-admin"],
+    queryKey: ["gallery-items"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gallery_items")
@@ -63,7 +63,7 @@ const AdminGallery = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gallery-items-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
       setIsDialogOpen(false);
       setFormData({ title: "", description: "", media_url: "", type: "image", tags: "" });
       toast({ title: "Gallery item created successfully" });
@@ -76,7 +76,7 @@ const AdminGallery = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gallery-items-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
       toast({ title: "Gallery item deleted successfully" });
     },
   });
