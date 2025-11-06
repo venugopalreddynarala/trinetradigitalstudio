@@ -30,49 +30,75 @@ const Events = () => {
 
   const EventCard = ({ event }: { event: any }) => (
     <Card 
-      className="overflow-hidden group cursor-pointer shadow-elegant hover:shadow-hover transition-smooth"
-      onClick={() => setSelectedEvent(event)}
+      className="overflow-hidden group shadow-elegant hover:shadow-hover transition-smooth"
     >
-      {event.thumbnail_url && (
-        <div className="relative h-48 overflow-hidden">
-          <img
-            src={event.thumbnail_url}
-            alt={event.title}
-            className="w-full h-full object-cover group-hover:scale-110 transition-smooth"
-          />
-          <Badge className="absolute top-4 right-4">
-            {event.status}
-          </Badge>
-        </div>
-      )}
-      <CardHeader>
-        <CardTitle className="group-hover:text-accent transition-smooth">
-          {event.title}
-        </CardTitle>
-        <CardDescription className="line-clamp-2">
-          {event.summary}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center text-muted-foreground">
-            <Calendar className="h-4 w-4 mr-2 text-accent" />
-            {format(new Date(event.event_date), "MMMM d, yyyy")}
+      <div 
+        className="cursor-pointer"
+        onClick={() => setSelectedEvent(event)}
+      >
+        {event.thumbnail_url ? (
+          <div className="relative h-48 overflow-hidden">
+            <img
+              src={event.thumbnail_url}
+              alt={event.title}
+              className="w-full h-full object-cover group-hover:scale-110 transition-smooth"
+            />
+            <Badge className="absolute top-4 right-4 bg-accent text-accent-foreground">
+              {event.status === "upcoming" ? "Upcoming" : "Past Event"}
+            </Badge>
           </div>
-          {event.event_time && (
+        ) : (
+          <div className="relative h-48 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+            <Calendar className="h-16 w-16 text-muted-foreground/30" />
+            <Badge className="absolute top-4 right-4 bg-accent text-accent-foreground">
+              {event.status === "upcoming" ? "Upcoming" : "Past Event"}
+            </Badge>
+          </div>
+        )}
+        <CardHeader>
+          <CardTitle className="group-hover:text-accent transition-smooth">
+            {event.title}
+          </CardTitle>
+          <CardDescription className="line-clamp-2">
+            {event.summary}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
             <div className="flex items-center text-muted-foreground">
-              <Clock className="h-4 w-4 mr-2 text-accent" />
-              {event.event_time}
+              <Calendar className="h-4 w-4 mr-2 text-accent" />
+              {format(new Date(event.event_date), "MMMM d, yyyy")}
             </div>
-          )}
-          {event.location && (
-            <div className="flex items-center text-muted-foreground">
-              <MapPin className="h-4 w-4 mr-2 text-accent" />
-              {event.location}
-            </div>
-          )}
-        </div>
-      </CardContent>
+            {event.event_time && (
+              <div className="flex items-center text-muted-foreground">
+                <Clock className="h-4 w-4 mr-2 text-accent" />
+                {event.event_time}
+              </div>
+            )}
+            {event.location && (
+              <div className="flex items-center text-muted-foreground">
+                <MapPin className="h-4 w-4 mr-2 text-accent" />
+                {event.location}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </div>
+      
+      {event.youtube_url && (
+        <CardContent className="pt-0 pb-4">
+          <Button 
+            asChild 
+            className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold text-base py-6 shadow-lg"
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          >
+            <a href={event.youtube_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
+              <ExternalLink className="h-5 w-5" />
+              <span>🎥 WATCH {event.status === "upcoming" ? "LIVE" : "RECORDING"}</span>
+            </a>
+          </Button>
+        </CardContent>
+      )}
     </Card>
   );
 
