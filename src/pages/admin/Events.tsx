@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Upload, X } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -19,6 +19,8 @@ const AdminEvents = () => {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
   const [formData, setFormData] = useState({
     title: "",
     summary: "",
@@ -28,6 +30,7 @@ const AdminEvents = () => {
     location: "",
     status: "upcoming",
     tags: "",
+    youtube_url: "",
   });
 
   useEffect(() => {
@@ -57,6 +60,28 @@ const AdminEvents = () => {
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      let thumbnailUrl = null;
+
+      // Upload thumbnail if file is selected
+      if (thumbnailFile) {
+        const fileExt = thumbnailFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('event-thumbnails')
+          .upload(filePath, thumbnailFile);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('event-thumbnails')
+          .getPublicUrl(filePath);
+
+        thumbnailUrl = publicUrl;
+      }
+
       const { error } = await supabase.from("events").insert({
         title: data.title,
         summary: data.summary,
@@ -66,13 +91,17 @@ const AdminEvents = () => {
         location: data.location,
         status: data.status,
         tags: data.tags ? data.tags.split(",").map(t => t.trim()) : [],
+        youtube_url: data.youtube_url || null,
+        thumbnail_url: thumbnailUrl,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events-admin"] });
       setIsDialogOpen(false);
-      setFormData({ title: "", summary: "", description_html: "", event_date: "", event_time: "", location: "", status: "upcoming", tags: "" });
+      setFormData({ title: "", summary: "", description_html: "", event_date: "", event_time: "", location: "", status: "upcoming", tags: "", youtube_url: "" });
+      setThumbnailFile(null);
+      setThumbnailPreview("");
       toast({ title: "Event created successfully" });
     },
   });
@@ -87,6 +116,23 @@ const AdminEvents = () => {
       toast({ title: "Event deleted successfully" });
     },
   });
+
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeThumbnail = () => {
+    setThumbnailFile(null);
+    setThumbnailPreview("");
+  };
 
   if (!user) return <div>Loading...</div>;
 
@@ -176,6 +222,15 @@ const AdminEvents = () => {
                   </Select>
                 </div>
                 <div>
+                  <Label htmlFor="youtube_url">YouTube URL</Label>
+                  <Input
+                    id="youtube_url"
+                    value={formData.youtube_url}
+                    onChange={(e) => setFormData({ ...formData, youtube_url: e.target.value })}
+                    placeholder="https://youtube.com/watch?v=..."
+                  />
+                </div>
+                <div>
                   <Label htmlFor="tags">Tags (comma separated)</Label>
                   <Input
                     id="tags"
@@ -184,8 +239,46 @@ const AdminEvents = () => {
                     placeholder="workshop, concert, exhibition"
                   />
                 </div>
-                <Button onClick={() => createMutation.mutate(formData)} className="w-full">
-                  Create Event
+                <div>
+                  <Label>Thumbnail Image</Label>
+                  <div className="space-y-2">
+                    {thumbnailPreview ? (
+                      <div className="relative">
+                        <img 
+                          src={thumbnailPreview} 
+                          alt="Thumbnail preview" 
+                          className="w-full h-48 object-cover rounded-md"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2"
+                          onClick={removeThumbnail}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-muted rounded-md p-8 text-center">
+                        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                        <Label htmlFor="thumbnail-upload" className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                          Click to upload thumbnail
+                        </Label>
+                        <Input
+                          id="thumbnail-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleThumbnailChange}
+                        />
+                        <p className="text-xs text-muted-foreground mt-2">PNG, JPG, GIF up to 5MB</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Button onClick={() => createMutation.mutate(formData)} className="w-full" disabled={createMutation.isPending}>
+                  {createMutation.isPending ? "Creating..." : "Create Event"}
                 </Button>
               </div>
             </DialogContent>
@@ -218,9 +311,19 @@ const AdminEvents = () => {
                 </div>
               </CardHeader>
               <CardContent>
+                {event.thumbnail_url && (
+                  <img 
+                    src={event.thumbnail_url} 
+                    alt={event.title}
+                    className="w-full h-32 object-cover rounded-md mb-3"
+                  />
+                )}
                 <p className="text-sm mb-2">{event.summary}</p>
                 <p className="text-sm text-muted-foreground">Location: {event.location}</p>
                 <p className="text-sm text-muted-foreground">Status: {event.status}</p>
+                {event.youtube_url && (
+                  <p className="text-sm text-muted-foreground">YouTube: {event.youtube_url}</p>
+                )}
                 <p className="text-sm text-muted-foreground">Tags: {event.tags?.join(", ") || "None"}</p>
               </CardContent>
             </Card>
