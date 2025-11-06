@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, X } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,10 @@ const AdminSettings = () => {
     address: "",
     timezone: "",
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>("");
+  const [ownerPhotoFile, setOwnerPhotoFile] = useState<File | null>(null);
+  const [ownerPhotoPreview, setOwnerPhotoPreview] = useState<string>("");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -58,19 +62,75 @@ const AdminSettings = () => {
         address: settings.address || "",
         timezone: settings.timezone || "",
       });
+      setLogoPreview(settings.studio_logo || "");
+      setOwnerPhotoPreview(settings.owner_photo || "");
     }
   }, [settings]);
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setLogoPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleOwnerPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setOwnerPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setOwnerPhotoPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const updateMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      let updateData: any = { ...data };
+
+      // Upload logo if changed
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `logo-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('site-assets')
+          .upload(fileName, logoFile);
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('site-assets')
+          .getPublicUrl(fileName);
+        updateData.studio_logo = publicUrl;
+      }
+
+      // Upload owner photo if changed
+      if (ownerPhotoFile) {
+        const fileExt = ownerPhotoFile.name.split('.').pop();
+        const fileName = `owner-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('site-assets')
+          .upload(fileName, ownerPhotoFile);
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('site-assets')
+          .getPublicUrl(fileName);
+        updateData.owner_photo = publicUrl;
+      }
+
       const { error } = await supabase
         .from("site_settings")
-        .update(data)
+        .update(updateData)
         .eq("id", settings?.id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+      setLogoFile(null);
+      setOwnerPhotoFile(null);
       toast({ title: "Settings updated successfully" });
     },
   });
@@ -98,6 +158,70 @@ const AdminSettings = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div>
+                <Label htmlFor="studio_logo">Studio Logo</Label>
+                <div className="mt-2">
+                  {logoPreview && (
+                    <div className="relative inline-block mb-2">
+                      <img src={logoPreview} alt="Logo preview" className="h-32 w-32 object-cover rounded-lg" />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={() => {
+                          setLogoFile(null);
+                          setLogoPreview("");
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  <div>
+                    <Input
+                      id="studio_logo"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      className="cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="owner_photo">Owner Photo</Label>
+                <div className="mt-2">
+                  {ownerPhotoPreview && (
+                    <div className="relative inline-block mb-2">
+                      <img src={ownerPhotoPreview} alt="Owner photo preview" className="h-32 w-32 object-cover rounded-lg" />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={() => {
+                          setOwnerPhotoFile(null);
+                          setOwnerPhotoPreview("");
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  <div>
+                    <Input
+                      id="owner_photo"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleOwnerPhotoChange}
+                      className="cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="studio_name">Studio Name</Label>
                 <Input
