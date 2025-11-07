@@ -21,6 +21,13 @@ const AdminSettings = () => {
     contact_phone: "",
     address: "",
     timezone: "",
+    social_links: {
+      facebook: "",
+      instagram: "",
+      twitter: "",
+      youtube: "",
+      linkedin: "",
+    },
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
@@ -54,6 +61,10 @@ const AdminSettings = () => {
 
   useEffect(() => {
     if (settings) {
+      const socialLinks = typeof settings.social_links === 'object' && settings.social_links !== null && !Array.isArray(settings.social_links)
+        ? settings.social_links as Record<string, any>
+        : {};
+      
       setFormData({
         studio_name: settings.studio_name || "",
         owner_name: settings.owner_name || "",
@@ -61,6 +72,13 @@ const AdminSettings = () => {
         contact_phone: settings.contact_phone || "",
         address: settings.address || "",
         timezone: settings.timezone || "",
+        social_links: {
+          facebook: socialLinks.facebook || "",
+          instagram: socialLinks.instagram || "",
+          twitter: socialLinks.twitter || "",
+          youtube: socialLinks.youtube || "",
+          linkedin: socialLinks.linkedin || "",
+        },
       });
       setLogoPreview(settings.studio_logo || "");
       setOwnerPhotoPreview(settings.owner_photo || "");
@@ -271,6 +289,77 @@ const AdminSettings = () => {
                   value={formData.timezone}
                   onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
                   placeholder="UTC"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Social Media Links</CardTitle>
+            <CardDescription>Add your social media profile URLs</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="facebook">Facebook</Label>
+                <Input
+                  id="facebook"
+                  value={formData.social_links.facebook}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    social_links: { ...formData.social_links, facebook: e.target.value }
+                  })}
+                  placeholder="https://facebook.com/yourpage"
+                />
+              </div>
+              <div>
+                <Label htmlFor="instagram">Instagram</Label>
+                <Input
+                  id="instagram"
+                  value={formData.social_links.instagram}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    social_links: { ...formData.social_links, instagram: e.target.value }
+                  })}
+                  placeholder="https://instagram.com/yourprofile"
+                />
+              </div>
+              <div>
+                <Label htmlFor="twitter">Twitter</Label>
+                <Input
+                  id="twitter"
+                  value={formData.social_links.twitter}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    social_links: { ...formData.social_links, twitter: e.target.value }
+                  })}
+                  placeholder="https://twitter.com/yourprofile"
+                />
+              </div>
+              <div>
+                <Label htmlFor="youtube">YouTube</Label>
+                <Input
+                  id="youtube"
+                  value={formData.social_links.youtube}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    social_links: { ...formData.social_links, youtube: e.target.value }
+                  })}
+                  placeholder="https://youtube.com/yourchannel"
+                />
+              </div>
+              <div>
+                <Label htmlFor="linkedin">LinkedIn</Label>
+                <Input
+                  id="linkedin"
+                  value={formData.social_links.linkedin}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    social_links: { ...formData.social_links, linkedin: e.target.value }
+                  })}
+                  placeholder="https://linkedin.com/in/yourprofile"
                 />
               </div>
               <Button onClick={() => updateMutation.mutate(formData)} className="w-full">

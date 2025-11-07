@@ -11,7 +11,7 @@ const About = () => {
       const { data, error } = await supabase
         .from("site_settings")
         .select("*")
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -31,7 +31,7 @@ const About = () => {
             <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
               <div>
                 <img 
-                  src={ownerPhoto} 
+                  src={settings?.owner_photo || ownerPhoto} 
                   alt={settings?.owner_name || "Studio Owner"} 
                   className="rounded-lg shadow-elegant w-full"
                 />

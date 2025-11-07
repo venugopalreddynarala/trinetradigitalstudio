@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Upload } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageCropper } from "@/components/ImageCropper";
 
 const AdminGallery = () => {
   const navigate = useNavigate();
@@ -18,10 +19,13 @@ const AdminGallery = () => {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [showCropper, setShowCropper] = useState(false);
+  const [croppedImage, setCroppedImage] = useState<Blob | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    media_url: "",
     type: "image",
     tags: "",
   });
@@ -51,12 +55,46 @@ const AdminGallery = () => {
     enabled: !!user,
   });
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+        setShowCropper(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCropComplete = (croppedImageBlob: Blob) => {
+    setCroppedImage(croppedImageBlob);
+    setShowCropper(false);
+  };
+
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      let mediaUrl = "";
+
+      if (croppedImage) {
+        const fileExt = "jpg";
+        const fileName = `gallery-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("site-assets")
+          .upload(fileName, croppedImage);
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("site-assets")
+          .getPublicUrl(fileName);
+        mediaUrl = publicUrl;
+      }
+
       const { error } = await supabase.from("gallery_items").insert({
         title: data.title,
         description: data.description,
-        media_url: data.media_url,
+        media_url: mediaUrl,
         type: data.type,
         tags: data.tags ? data.tags.split(",").map(t => t.trim()) : [],
       });
@@ -65,7 +103,10 @@ const AdminGallery = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gallery-items"] });
       setIsDialogOpen(false);
-      setFormData({ title: "", description: "", media_url: "", type: "image", tags: "" });
+      setFormData({ title: "", description: "", type: "image", tags: "" });
+      setImageFile(null);
+      setImagePreview("");
+      setCroppedImage(null);
       toast({ title: "Gallery item created successfully" });
     },
   });
@@ -104,6 +145,27 @@ const AdminGallery = () => {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
+                  <Label htmlFor="image">Upload Image</Label>
+                  <div className="mt-2">
+                    {croppedImage && (
+                      <div className="mb-4">
+                        <img 
+                          src={URL.createObjectURL(croppedImage)} 
+                          alt="Cropped preview" 
+                          className="h-32 w-auto object-cover rounded-lg"
+                        />
+                      </div>
+                    )}
+                    <Input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="cursor-pointer"
+                    />
+                  </div>
+                </div>
+                <div>
                   <Label htmlFor="title">Title</Label>
                   <Input
                     id="title"
@@ -117,14 +179,6 @@ const AdminGallery = () => {
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="media_url">Media URL</Label>
-                  <Input
-                    id="media_url"
-                    value={formData.media_url}
-                    onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
                   />
                 </div>
                 <div>
@@ -148,12 +202,28 @@ const AdminGallery = () => {
                     placeholder="wedding, portrait, landscape"
                   />
                 </div>
-                <Button onClick={() => createMutation.mutate(formData)} className="w-full">
+                <Button 
+                  onClick={() => createMutation.mutate(formData)} 
+                  className="w-full"
+                  disabled={!croppedImage}
+                >
                   Create Item
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
+          {showCropper && imagePreview && (
+            <ImageCropper
+              image={imagePreview}
+              onCropComplete={handleCropComplete}
+              onCancel={() => {
+                setShowCropper(false);
+                setImageFile(null);
+                setImagePreview("");
+              }}
+              aspectRatio={4 / 3}
+            />
+          )}
         </div>
       </header>
 

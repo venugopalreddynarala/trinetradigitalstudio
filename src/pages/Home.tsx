@@ -48,7 +48,7 @@ const Home = () => {
             </div>
             <div className="animate-fade-in">
               <img 
-                src={ownerPhoto} 
+                src={settings?.owner_photo || ownerPhoto} 
                 alt={settings?.owner_name || "Studio Owner"} 
                 className="rounded-lg shadow-elegant w-full h-auto"
               />
