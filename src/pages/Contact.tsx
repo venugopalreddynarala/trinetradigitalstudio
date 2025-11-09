@@ -183,7 +183,7 @@ const Contact = () => {
               <Card>
                 <CardContent className="p-0">
                   <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.9663095919355!2d-74.00425878428698!3d40.74076794379132!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c259bf5c1654f3%3A0xc80f9cfce5383d5d!2sGoogle!5e0!3m2!1sen!2sus!4v1234567890123!5m2!1sen!2sus"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d307.2059602359386!2d80.1859562!3d16.8360611!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a35a79bef955187%3A0x392f0772019d92e1!2sTrinetra%20digtal%20photography!5e0!3m2!1sen!2sin!4v1731127265582!5m2!1sen!2sin"
                     width="100%"
                     height="300"
                     style={{ border: 0 }}
