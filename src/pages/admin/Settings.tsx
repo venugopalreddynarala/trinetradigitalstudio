@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Upload, X } from "lucide-react";
+import { ArrowLeft, Upload, X, User, Lock } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 
 const AdminSettings = () => {
   const navigate = useNavigate();
@@ -33,6 +35,9 @@ const AdminSettings = () => {
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [ownerPhotoFile, setOwnerPhotoFile] = useState<File | null>(null);
   const [ownerPhotoPreview, setOwnerPhotoPreview] = useState<string>("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -153,6 +158,75 @@ const AdminSettings = () => {
     },
   });
 
+  const handleEmailChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter a new email address",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Email updated successfully. Please check your new email to confirm.",
+      });
+      setNewEmail("");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "New passwords do not match",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Password updated successfully",
+      });
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
   if (!user) return <div>Loading...</div>;
 
   return (
@@ -169,12 +243,19 @@ const AdminSettings = () => {
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         <h1 className="text-3xl font-serif font-bold mb-8">Site Settings</h1>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Studio Information</CardTitle>
-            <CardDescription>Update your studio details and contact information</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <Tabs defaultValue="studio" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="studio">Studio Settings</TabsTrigger>
+            <TabsTrigger value="account">Account Security</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="studio" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Studio Information</CardTitle>
+                <CardDescription>Update your studio details and contact information</CardDescription>
+              </CardHeader>
+              <CardContent>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="studio_logo">Studio Logo</Label>
@@ -290,84 +371,155 @@ const AdminSettings = () => {
                   onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
                   placeholder="UTC"
                 />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Social Media Links</CardTitle>
-            <CardDescription>Add your social media profile URLs</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="facebook">Facebook</Label>
-                <Input
-                  id="facebook"
-                  value={formData.social_links.facebook}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    social_links: { ...formData.social_links, facebook: e.target.value }
-                  })}
-                  placeholder="https://facebook.com/yourpage"
-                />
+          <Card>
+            <CardHeader>
+              <CardTitle>Social Media Links</CardTitle>
+              <CardDescription>Add your social media profile URLs</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="facebook">Facebook</Label>
+                  <Input
+                    id="facebook"
+                    value={formData.social_links.facebook}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      social_links: { ...formData.social_links, facebook: e.target.value }
+                    })}
+                    placeholder="https://facebook.com/yourpage"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="instagram">Instagram</Label>
+                  <Input
+                    id="instagram"
+                    value={formData.social_links.instagram}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      social_links: { ...formData.social_links, instagram: e.target.value }
+                    })}
+                    placeholder="https://instagram.com/yourprofile"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="twitter">Twitter</Label>
+                  <Input
+                    id="twitter"
+                    value={formData.social_links.twitter}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      social_links: { ...formData.social_links, twitter: e.target.value }
+                    })}
+                    placeholder="https://twitter.com/yourprofile"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="youtube">YouTube</Label>
+                  <Input
+                    id="youtube"
+                    value={formData.social_links.youtube}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      social_links: { ...formData.social_links, youtube: e.target.value }
+                    })}
+                    placeholder="https://youtube.com/yourchannel"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="linkedin">LinkedIn</Label>
+                  <Input
+                    id="linkedin"
+                    value={formData.social_links.linkedin}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      social_links: { ...formData.social_links, linkedin: e.target.value }
+                    })}
+                    placeholder="https://linkedin.com/in/yourprofile"
+                  />
+                </div>
+                <Button onClick={() => updateMutation.mutate(formData)} className="w-full">
+                  Save Settings
+                </Button>
               </div>
-              <div>
-                <Label htmlFor="instagram">Instagram</Label>
-                <Input
-                  id="instagram"
-                  value={formData.social_links.instagram}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    social_links: { ...formData.social_links, instagram: e.target.value }
-                  })}
-                  placeholder="https://instagram.com/yourprofile"
-                />
-              </div>
-              <div>
-                <Label htmlFor="twitter">Twitter</Label>
-                <Input
-                  id="twitter"
-                  value={formData.social_links.twitter}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    social_links: { ...formData.social_links, twitter: e.target.value }
-                  })}
-                  placeholder="https://twitter.com/yourprofile"
-                />
-              </div>
-              <div>
-                <Label htmlFor="youtube">YouTube</Label>
-                <Input
-                  id="youtube"
-                  value={formData.social_links.youtube}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    social_links: { ...formData.social_links, youtube: e.target.value }
-                  })}
-                  placeholder="https://youtube.com/yourchannel"
-                />
-              </div>
-              <div>
-                <Label htmlFor="linkedin">LinkedIn</Label>
-                <Input
-                  id="linkedin"
-                  value={formData.social_links.linkedin}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    social_links: { ...formData.social_links, linkedin: e.target.value }
-                  })}
-                  placeholder="https://linkedin.com/in/yourprofile"
-                />
-              </div>
-              <Button onClick={() => updateMutation.mutate(formData)} className="w-full">
-                Save Settings
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="account" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Change Email
+              </CardTitle>
+              <CardDescription>
+                Update your admin email address
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleEmailChange} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newEmail">New Email Address</Label>
+                  <Input
+                    id="newEmail"
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="new-email@example.com"
+                    required
+                  />
+                </div>
+                <Button type="submit">Update Email</Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Change Password
+              </CardTitle>
+              <CardDescription>
+                Update your admin password
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    required
+                  />
+                </div>
+                <Button type="submit">Update Password</Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
       </main>
     </div>
   );

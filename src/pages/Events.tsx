@@ -28,6 +28,26 @@ const Events = () => {
     return null;
   };
 
+  const getEventStatus = (event: any) => {
+    const now = new Date();
+    const eventDate = new Date(event.event_date);
+    
+    if (event.event_time) {
+      const [hours, minutes] = event.event_time.split(':');
+      eventDate.setHours(parseInt(hours), parseInt(minutes));
+    }
+    
+    const eventEnd = new Date(eventDate.getTime() + 24 * 60 * 60 * 1000); // 24 hours after event
+    
+    if (now >= eventDate && now <= eventEnd) {
+      return "ongoing";
+    } else if (now > eventEnd) {
+      return "past";
+    } else {
+      return "upcoming";
+    }
+  };
+
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["events"],
     queryFn: async () => {
@@ -40,8 +60,14 @@ const Events = () => {
     },
   });
 
-  const upcomingEvents = events.filter((e) => e.status === "upcoming");
-  const pastEvents = events.filter((e) => e.status === "past");
+  const eventsWithStatus = events.map(event => ({
+    ...event,
+    computedStatus: getEventStatus(event)
+  }));
+
+  const upcomingEvents = eventsWithStatus.filter((e) => e.computedStatus === "upcoming");
+  const ongoingEvents = eventsWithStatus.filter((e) => e.computedStatus === "ongoing");
+  const pastEvents = eventsWithStatus.filter((e) => e.computedStatus === "past");
 
   const EventCard = ({ event }: { event: any }) => (
     <Card 
@@ -59,14 +85,14 @@ const Events = () => {
               className="w-full h-full object-cover group-hover:scale-110 transition-smooth"
             />
             <Badge className="absolute top-4 right-4 bg-accent text-accent-foreground">
-              {event.status === "upcoming" ? "Upcoming" : "Past Event"}
+              {event.computedStatus === "upcoming" ? "Upcoming" : event.computedStatus === "ongoing" ? "Ongoing" : "Past Event"}
             </Badge>
           </div>
         ) : (
           <div className="relative h-48 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
             <Calendar className="h-16 w-16 text-muted-foreground/30" />
             <Badge className="absolute top-4 right-4 bg-accent text-accent-foreground">
-              {event.status === "upcoming" ? "Upcoming" : "Past Event"}
+              {event.computedStatus === "upcoming" ? "Upcoming" : event.computedStatus === "ongoing" ? "Ongoing" : "Past Event"}
             </Badge>
           </div>
         )}
@@ -109,7 +135,7 @@ const Events = () => {
           >
             <a href={event.youtube_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
               <ExternalLink className="h-5 w-5" />
-              <span>🎥 WATCH {event.status === "upcoming" ? "LIVE" : "RECORDING"}</span>
+              <span>🎥 WATCH {event.computedStatus === "upcoming" ? "LIVE" : event.computedStatus === "ongoing" ? "LIVE NOW" : "RECORDING"}</span>
             </a>
           </Button>
         </CardContent>
@@ -136,6 +162,18 @@ const Events = () => {
             </div>
           ) : (
             <>
+              {/* Ongoing Events */}
+              {ongoingEvents.length > 0 && (
+                <section className="mb-16">
+                  <h2 className="text-3xl font-serif font-bold mb-8">Happening Now</h2>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {ongoingEvents.map((event) => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
               {/* Upcoming Events */}
               {upcomingEvents.length > 0 && (
                 <section className="mb-16">
@@ -174,7 +212,14 @@ const Events = () => {
       <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-3xl font-serif">{selectedEvent?.title}</DialogTitle>
+            <div className="flex items-center justify-between gap-4">
+              <DialogTitle className="text-3xl font-serif">{selectedEvent?.title}</DialogTitle>
+              {selectedEvent && (
+                <Badge variant={selectedEvent.computedStatus === "ongoing" ? "default" : "secondary"}>
+                  {selectedEvent.computedStatus === "upcoming" ? "Upcoming" : selectedEvent.computedStatus === "ongoing" ? "Live Now" : "Past Event"}
+                </Badge>
+              )}
+            </div>
           </DialogHeader>
           {selectedEvent && (
             <div className="space-y-6">

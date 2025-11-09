@@ -11,87 +11,32 @@ import { supabase } from "@/integrations/supabase/client";
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [email, setEmail] = useState("trinetra@gmail.com");
-  const [password, setPassword] = useState("trinetra");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignup, setIsSignup] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      if (isSignup) {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`
-          }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.session) {
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
         });
-
-        if (error) throw error;
-
-        if (data.user) {
-          // Create profile
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              email: data.user.email,
-              username: email.split('@')[0],
-            });
-
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-          }
-
-          // Add admin role
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({
-              user_id: data.user.id,
-              role: 'admin',
-            });
-
-          if (roleError) {
-            console.error('Role creation error:', roleError);
-          }
-
-          toast({
-            title: "Admin account created",
-            description: "Logging you in now...",
-          });
-          
-          // Auto login after signup
-          const { error: loginError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-
-          if (!loginError) {
-            navigate("/admin/dashboard");
-          }
-        }
-      } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-
-        if (data.session) {
-          toast({
-            title: "Login successful",
-            description: "Welcome back!",
-          });
-          navigate("/admin/dashboard");
-        }
+        navigate("/admin/dashboard");
       }
     } catch (error: any) {
       toast({
-        title: isSignup ? "Signup failed" : "Login failed",
+        title: "Login failed",
         description: error.message || "Invalid credentials",
         variant: "destructive",
       });
@@ -108,19 +53,16 @@ const AdminLogin = () => {
             <Camera className="h-12 w-12 text-accent" />
           </div>
           <CardTitle className="text-3xl font-serif">
-            {isSignup ? "Create Admin Account" : "Admin Login"}
+            Admin Login
           </CardTitle>
           <CardDescription>
-            {isSignup 
-              ? "Create your admin account to access the dashboard"
-              : "Enter your credentials to access the admin dashboard"
-            }
+            Enter your credentials to access the admin dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Admin Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -131,7 +73,7 @@ const AdminLogin = () => {
               />
             </div>
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Admin Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -142,24 +84,8 @@ const AdminLogin = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading 
-                ? (isSignup ? "Creating account..." : "Logging in...") 
-                : (isSignup ? "Create Account" : "Login")
-              }
+              {isLoading ? "Logging in..." : "Login"}
             </Button>
-            <div className="text-center mt-4">
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => setIsSignup(!isSignup)}
-                disabled={isLoading}
-              >
-                {isSignup 
-                  ? "Already have an account? Login" 
-                  : "Need an account? Sign up"
-                }
-              </Button>
-            </div>
           </form>
         </CardContent>
       </Card>
