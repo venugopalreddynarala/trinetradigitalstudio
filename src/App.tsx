@@ -14,6 +14,7 @@ import AdminMessages from "./pages/admin/Messages";
 import AdminGallery from "./pages/admin/Gallery";
 import AdminEvents from "./pages/admin/Events";
 import AdminSettings from "./pages/admin/Settings";
+import AdminFeaturedWork from "./pages/admin/FeaturedWork";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/admin/gallery" element={<AdminGallery />} />
           <Route path="/admin/events" element={<AdminEvents />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
+          <Route path="/admin/featured-work" element={<AdminFeaturedWork />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

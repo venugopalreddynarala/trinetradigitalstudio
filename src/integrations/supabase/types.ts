@@ -92,6 +92,39 @@ export type Database = {
         }
         Relationships: []
       }
+      featured_work: {
+        Row: {
+          created_at: string | null
+          description: string
+          display_order: number | null
+          id: string
+          image_url: string
+          title: string
+          updated_at: string | null
+          visible: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          display_order?: number | null
+          id?: string
+          image_url: string
+          title: string
+          updated_at?: string | null
+          visible?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          title?: string
+          updated_at?: string | null
+          visible?: boolean | null
+        }
+        Relationships: []
+      }
       gallery_items: {
         Row: {
           description: string | null

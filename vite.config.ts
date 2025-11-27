@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import history from "connect-history-api-fallback";
+import type { Connect } from "vite";
 
 export default defineConfig(({ mode }) => ({
   server: {
@@ -19,8 +19,8 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     {
       name: "spa-fallback",
-      configurePreviewServer(server) {
-        server.middlewares.use(history());
+      configurePreviewServer(server: { middlewares: Connect.Server }) {
+        return;
       },
     },
   ].filter(Boolean),
