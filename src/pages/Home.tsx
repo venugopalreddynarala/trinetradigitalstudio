@@ -7,9 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import ownerPhoto from "@/assets/owner-photo.jpg";
-import galleryWedding from "@/assets/gallery-wedding.jpg";
-import galleryPortrait from "@/assets/gallery-portrait.jpg";
-import galleryLandscape from "@/assets/gallery-landscape.jpg";
 
 const Home = () => {
   const { data: settings } = useQuery({
@@ -19,6 +16,19 @@ const Home = () => {
         .from("site_settings")
         .select("*")
         .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: featuredWork = [] } = useQuery({
+    queryKey: ["featured-work"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("featured_work")
+        .select("*")
+        .eq("visible", true)
+        .order("display_order");
       if (error) throw error;
       return data;
     },
@@ -70,22 +80,18 @@ const Home = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { img: galleryWedding, title: "Wedding Photography", desc: "Romantic & Timeless" },
-              { img: galleryPortrait, title: "Professional Portraits", desc: "Elegant & Refined" },
-              { img: galleryLandscape, title: "Landscape & Nature", desc: "Breathtaking & Serene" },
-            ].map((item, idx) => (
-              <Card key={idx} className="overflow-hidden group cursor-pointer shadow-elegant hover:shadow-hover transition-smooth">
+            {featuredWork.map((item) => (
+              <Card key={item.id} className="overflow-hidden group cursor-pointer shadow-elegant hover:shadow-hover transition-smooth">
                 <CardContent className="p-0">
                   <div className="relative h-80 overflow-hidden">
                     <img 
-                      src={item.img} 
+                      src={item.image_url} 
                       alt={item.title} 
                       className="w-full h-full object-cover group-hover:scale-110 transition-smooth"
                     />
                     <div className="absolute inset-0 bg-primary/60 opacity-0 group-hover:opacity-100 transition-smooth flex items-center justify-center flex-col text-primary-foreground">
                       <h3 className="text-2xl font-serif font-bold mb-2">{item.title}</h3>
-                      <p>{item.desc}</p>
+                      <p>{item.description}</p>
                     </div>
                   </div>
                 </CardContent>

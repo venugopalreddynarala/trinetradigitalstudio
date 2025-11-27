@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Camera, LogOut, Image, Calendar, Mail, Settings } from "lucide-react";
+import { Camera, LogOut, Image, Calendar, Mail, Settings, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -170,6 +170,16 @@ const AdminDashboard = () => {
                 <Settings className="h-8 w-8 text-accent mb-2" />
                 <CardTitle>Site Settings</CardTitle>
                 <CardDescription>Update studio information and settings</CardDescription>
+              </CardHeader>
+            </Link>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-hover transition-smooth">
+            <Link to="/admin/featured-work">
+              <CardHeader>
+                <Star className="h-8 w-8 text-accent mb-2" />
+                <CardTitle>Featured Work</CardTitle>
+                <CardDescription>Manage home page featured work section</CardDescription>
               </CardHeader>
             </Link>
           </Card>
