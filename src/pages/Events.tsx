@@ -6,12 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, ExternalLink } from "lucide-react";
+import { Calendar, Clock, MapPin, ExternalLink, PlayCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import YouTubePlayerModal from "@/components/YouTubePlayerModal";
 
 const Events = () => {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [playerEvent, setPlayerEvent] = useState<any>(null);
 
   // Convert YouTube URL to embed format
   const getYouTubeEmbedUrl = (url: string) => {
