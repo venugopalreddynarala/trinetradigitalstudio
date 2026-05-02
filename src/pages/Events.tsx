@@ -261,31 +261,38 @@ const Events = () => {
                   dangerouslySetInnerHTML={{ __html: selectedEvent.description_html }}
                 />
               )}
-              {selectedEvent.youtube_url && (
-                <div className="space-y-4">
-                  {getYouTubeEmbedUrl(selectedEvent.youtube_url) && (
-                    <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-                      <iframe
-                        className="absolute top-0 left-0 w-full h-full rounded-lg"
-                        src={getYouTubeEmbedUrl(selectedEvent.youtube_url) || ''}
-                        title={selectedEvent.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                  )}
+              <div className="space-y-3">
+                <Button
+                  className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white"
+                  onClick={() => setPlayerEvent(selectedEvent)}
+                >
+                  <PlayCircle className="h-5 w-5 mr-2" />
+                  Watch Stream
+                </Button>
+                {selectedEvent.youtube_url && (
                   <Button asChild variant="outline" className="w-full">
-                    <a href={selectedEvent.youtube_url} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={selectedEvent.youtube_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <ExternalLink className="h-4 w-4 mr-2" />
                       Open in YouTube
                     </a>
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      <YouTubePlayerModal
+        open={!!playerEvent}
+        onOpenChange={(o) => !o && setPlayerEvent(null)}
+        youtubeUrl={playerEvent?.youtube_url}
+        title={playerEvent?.title ?? "Live Stream"}
+      />
 
       <Footer />
     </div>
