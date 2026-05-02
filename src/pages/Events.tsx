@@ -128,20 +128,25 @@ const Events = () => {
         </CardContent>
       </div>
       
-      {event.youtube_url && (
-        <CardContent className="pt-0 pb-4">
-          <Button 
-            asChild 
-            className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold text-base py-6 shadow-lg"
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-          >
-            <a href={event.youtube_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
-              <ExternalLink className="h-5 w-5" />
-              <span>🎥 WATCH {event.computedStatus === "upcoming" ? "LIVE" : event.computedStatus === "ongoing" ? "LIVE NOW" : "RECORDING"}</span>
-            </a>
-          </Button>
-        </CardContent>
-      )}
+      <CardContent className="pt-0 pb-4">
+        <Button
+          className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold text-base py-6 shadow-lg"
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            setPlayerEvent(event);
+          }}
+        >
+          <PlayCircle className="h-5 w-5 mr-2" />
+          <span>
+            🎥 WATCH{" "}
+            {event.computedStatus === "upcoming"
+              ? "LIVE"
+              : event.computedStatus === "ongoing"
+              ? "LIVE NOW"
+              : "RECORDING"}
+          </span>
+        </Button>
+      </CardContent>
     </Card>
   );
 
