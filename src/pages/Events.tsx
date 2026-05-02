@@ -6,12 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, ExternalLink } from "lucide-react";
+import { Calendar, Clock, MapPin, ExternalLink, PlayCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import YouTubePlayerModal from "@/components/YouTubePlayerModal";
 
 const Events = () => {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [playerEvent, setPlayerEvent] = useState<any>(null);
 
   // Convert YouTube URL to embed format
   const getYouTubeEmbedUrl = (url: string) => {
@@ -126,20 +128,25 @@ const Events = () => {
         </CardContent>
       </div>
       
-      {event.youtube_url && (
-        <CardContent className="pt-0 pb-4">
-          <Button 
-            asChild 
-            className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold text-base py-6 shadow-lg"
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-          >
-            <a href={event.youtube_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
-              <ExternalLink className="h-5 w-5" />
-              <span>🎥 WATCH {event.computedStatus === "upcoming" ? "LIVE" : event.computedStatus === "ongoing" ? "LIVE NOW" : "RECORDING"}</span>
-            </a>
-          </Button>
-        </CardContent>
-      )}
+      <CardContent className="pt-0 pb-4">
+        <Button
+          className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold text-base py-6 shadow-lg"
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            setPlayerEvent(event);
+          }}
+        >
+          <PlayCircle className="h-5 w-5 mr-2" />
+          <span>
+            🎥 WATCH{" "}
+            {event.computedStatus === "upcoming"
+              ? "LIVE"
+              : event.computedStatus === "ongoing"
+              ? "LIVE NOW"
+              : "RECORDING"}
+          </span>
+        </Button>
+      </CardContent>
     </Card>
   );
 
@@ -254,31 +261,38 @@ const Events = () => {
                   dangerouslySetInnerHTML={{ __html: selectedEvent.description_html }}
                 />
               )}
-              {selectedEvent.youtube_url && (
-                <div className="space-y-4">
-                  {getYouTubeEmbedUrl(selectedEvent.youtube_url) && (
-                    <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-                      <iframe
-                        className="absolute top-0 left-0 w-full h-full rounded-lg"
-                        src={getYouTubeEmbedUrl(selectedEvent.youtube_url) || ''}
-                        title={selectedEvent.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                  )}
+              <div className="space-y-3">
+                <Button
+                  className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white"
+                  onClick={() => setPlayerEvent(selectedEvent)}
+                >
+                  <PlayCircle className="h-5 w-5 mr-2" />
+                  Watch Stream
+                </Button>
+                {selectedEvent.youtube_url && (
                   <Button asChild variant="outline" className="w-full">
-                    <a href={selectedEvent.youtube_url} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={selectedEvent.youtube_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <ExternalLink className="h-4 w-4 mr-2" />
                       Open in YouTube
                     </a>
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      <YouTubePlayerModal
+        open={!!playerEvent}
+        onOpenChange={(o) => !o && setPlayerEvent(null)}
+        youtubeUrl={playerEvent?.youtube_url}
+        title={playerEvent?.title ?? "Live Stream"}
+      />
 
       <Footer />
     </div>
